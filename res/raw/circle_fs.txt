@@ -30,7 +30,7 @@ void main()
 //	specularPower = pow(nxHalf, 20.0);
 //	specular = vec3(0.7, 0.7, 0.7) * specularPower;
 
-	specularPower = (nxHalf > .96) ? 0.7 : 0.0;
+	specularPower = (nxHalf > .98) ? 0.7 : 0.0;
 	specular = vec4(1.0, 1.0, 1.0, 1.0) * specularPower;
 
 //	gl_FragColor = texture2D(cmap, vec2((float(iter)+.5)/256.0, 0.125));
