@@ -42,6 +42,9 @@ public class mrenderer implements GLSurfaceView.Renderer {
 	private int circle_CENTER, circle_IRADIUS, circle_DIRECTION;
 	private int circle_LIGHT, circle_COLOR;
 	private float lightx, lighty, lightz;
+	private float xpos = 0.0f, ypos = 0.0f;
+	private double scale = 1.0f;
+	private float rawx, rawy;
 
 	public  mrenderer(Context context, mview aview)
 	{
@@ -113,7 +116,15 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 
 		GLES20.glClearColor(0.0f, 0.0f, 0.2f, 1.0f);
 		// initialize the triangle vertex array
-		initShapes(time);
+
+		ByteBuffer vbb, vbb2;
+		vbb = ByteBuffer.allocateDirect(MAXCOORDS * 4);
+		vbb.order(ByteOrder.nativeOrder());// use the device hardware's native byte order
+		coordVB = vbb.asFloatBuffer();  // create a floating point buffer from the ByteBuffer
+		vbb2 = ByteBuffer.allocateDirect(MAXCOORDS * 4);
+		vbb2.order(ByteOrder.nativeOrder());// use the device hardware's native byte order
+		textureVB = vbb2.asFloatBuffer();
+
 		int vertexShader = load_res_Shader(GLES20.GL_VERTEX_SHADER,
 					R.raw.circle_vs);
 		int fragmentShader = load_res_Shader(GLES20.GL_FRAGMENT_SHADER,
@@ -184,16 +195,14 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		// Add program to OpenGL environment
 		GLES20.glUseProgram(mProgram);
 
-		initShapes(time);
-		time++;
 		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
 		GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
 		GLES20.glUniform3f(circle_LIGHT, lightx, lighty, lightz);
 
 		float eyedx, eyedy, eyedz;
-		eyedx = -xpos;
-		eyedy = -ypos;
-		eyedz = 400.0f;
+		eyedx = -rawx;
+		eyedy = -rawy;
+		eyedz = 100.0f;
 		float ef = 1.0f / FloatMath.sqrt(eyedx*eyedx + eyedy*eyedy + eyedz*eyedz);
 		eyedx *= ef;
 		eyedy *= ef;
@@ -201,7 +210,8 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 
 		GLES20.glUniform3f(circle_DIRECTION, eyedx, eyedy, eyedz);
 
-		DrawEye((float)xpos, (float)ypos, 100.0f / (float)scale, 0.0f);
+//		DrawEye((float)xpos, (float)ypos, 100.0f / (float)scale, 0.0f);
+		DrawEye(rawx, rawy, 100.0f / (float)scale, 0.0f);
 
 		for(int i=0;i<8;++i)
 		{
@@ -305,58 +315,6 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 
 	}
 
-
-	private ByteBuffer vbb, vbb2;
-	private float xpos = 0.0f, ypos = 0.0f;
-	private double scale = 1.0f;
-	private int first_time = 1;
-	private void initShapes(int tv){
-
-		int i;
-		float t;
-		float ap = tv * .006f;
-		float [] Coords = new float[12];
-		float [] TCoords = new float[8];
-		float t2;
-		float u, v;
-		u = v = 0.5f;
-		final float hack = .02f;
-
-		for(i=0;i<4;++i)
-		{
-			int j = i*3;
-
-			Coords[j+0] = u * sw * 2.0f;
-			Coords[j+1] = v * sh * 2.0f;
-			Coords[j+2] = 0.0f;
-			j = i*2;
-			TCoords[j+0] = (float)((-xpos + u) * hack * sw * scale);
-			TCoords[j+1] = (float)(( ypos + v) * hack * sh * scale);
-			float tt=u;
-			u = -v;
-			v = tt;
-
-		}
-
-		// initialize vertex Buffer for triangle
-		if(first_time != 0)
-		{
-
-			first_time = 0;
-			vbb = ByteBuffer.allocateDirect(MAXCOORDS * 4);
-			vbb.order(ByteOrder.nativeOrder());// use the device hardware's native byte order
-			coordVB = vbb.asFloatBuffer();  // create a floating point buffer from the ByteBuffer
-			vbb2 = ByteBuffer.allocateDirect(MAXCOORDS * 4);
-			vbb2.order(ByteOrder.nativeOrder());// use the device hardware's native byte order
-			textureVB = vbb2.asFloatBuffer();
-
-		}
-
-		coordVB.put(Coords); // add the coordinates to the FloatBuffer
-		coordVB.position(0); // set the buffer to read the first coordinate
-		textureVB.put(TCoords); // add the coordinates to the FloatBuffer
-		textureVB.position(0); // set the buffer to read the first coordinate
-	}
 	private int buttonstate = 0;
 	private float downx0, downy0;
 	private float currx0, curry0;
@@ -380,6 +338,9 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 				MotionEvent.ACTION_POINTER_INDEX_SHIFT;
 		action &= ~MotionEvent.ACTION_POINTER_INDEX_MASK;
 //Log.d(TAG, "                           action = " + action + ", pid = " + pid);
+
+		rawx = (e.getX() / dwidth - 0.5f) * sw * 2.0f;
+		rawy = (0.5f - e.getY() / dheight) * sh * 2.0f;
 
 		if(action==MotionEvent.ACTION_POINTER_DOWN)
 			action = MotionEvent.ACTION_DOWN;
