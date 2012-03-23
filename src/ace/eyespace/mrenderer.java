@@ -22,6 +22,7 @@ import android.util.FloatMath;
 import android.view.MotionEvent;
 
 public class mrenderer implements GLSurfaceView.Renderer {
+	final private int MAXCOORDS = 256;
 	private FloatBuffer coordVB, textureVB;
 	private int mProgram;
 	private int maPositionHandle;
@@ -49,24 +50,24 @@ public class mrenderer implements GLSurfaceView.Renderer {
 	}
 
 	private int loadShader(int type, String shaderCode){
-	
+
 		// create a vertex shader type (GLES20.GL_VERTEX_SHADER)
 		// or a fragment shader type (GLES20.GL_FRAGMENT_SHADER)
-		int shader = GLES20.glCreateShader(type); 
-		
+		int shader = GLES20.glCreateShader(type);
+
 		// add the source code to the shader and compile it
 		GLES20.glShaderSource(shader, shaderCode);
 		GLES20.glCompileShader(shader);
 Log.e(TAG, GLES20.glGetShaderInfoLog(shader));
-		
+
 		return shader;
 	}
 
 	private int load_res_Shader(int type, int fID){
-	
+
 		// create a vertex shader type (GLES20.GL_VERTEX_SHADER)
 		// or a fragment shader type (GLES20.GL_FRAGMENT_SHADER)
-		int shader = GLES20.glCreateShader(type); 
+		int shader = GLES20.glCreateShader(type);
 		StringBuffer fs = new StringBuffer();
 
 		try {
@@ -85,7 +86,7 @@ Log.e(TAG, GLES20.glGetShaderInfoLog(shader));
 
 		}
 
-		
+
 		// add the source code to the shader and compile it
 		GLES20.glShaderSource(shader, fs.toString());
 		GLES20.glCompileShader(shader);
@@ -110,19 +111,19 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		Log.d(TAG, "GL_SHADER_BINARY_FORMATS[0] = " + testval[0]);
 
 
-		GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		GLES20.glClearColor(0.0f, 0.0f, 0.2f, 1.0f);
 		// initialize the triangle vertex array
 		initShapes(time);
 		int vertexShader = load_res_Shader(GLES20.GL_VERTEX_SHADER,
 					R.raw.circle_vs);
 		int fragmentShader = load_res_Shader(GLES20.GL_FRAGMENT_SHADER,
 					R.raw.circle_fs);
-		
+
 		mProgram = GLES20.glCreateProgram();			 // create empty OpenGL Program
 		GLES20.glAttachShader(mProgram, vertexShader);   // add the vertex shader to program
 		GLES20.glAttachShader(mProgram, fragmentShader); // add the fragment shader to program
 		GLES20.glLinkProgram(mProgram);				  // creates OpenGL program executables
-		
+
 		// get handle to the vertex shader's vPosition member
 		maPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
 		matPosHandle = GLES20.glGetAttribLocation(mProgram, "tPosition");
@@ -168,13 +169,13 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		lighty *= lf;
 		lightz *= lf;
 	}
-	
+
 	public void onDrawFrame(GL10 unused) {
 		// Redraw background color
 		GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 		// Add program to OpenGL environment
 		GLES20.glUseProgram(mProgram);
-		
+
 		initShapes(time);
 		time++;
 		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
@@ -203,13 +204,46 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 
 		GLES20.glUniform3f(circle_DIRECTION, eyedx, eyedy, eyedz);
 
-
-
 		// Draw the figure
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 4);
 
+
+		DrawEye(50.0f, 50.0f, 40.0f);
 	}
-	
+
+	void DrawEye(float x, float y, float r)
+	{
+		int i, j;
+		float a, re;
+
+		final int numvert = 8;
+		float [] Coords = new float[3*(numvert+2)];
+
+		j = 0;
+		Coords[j+0] = x;
+		Coords[j+1] = y;
+		Coords[j+2] = 0.0f;
+		j+=3;
+
+		re = r / FloatMath.cos(3.14159f / numvert);
+		for(i=0;i<=numvert;++i)
+		{
+			a = i*3.14159f * 2.0f / numvert;
+			Coords[j+0] = x + re * FloatMath.cos(a);
+			Coords[j+1] = y + re * FloatMath.sin(a);
+			Coords[j+2] = 0.0f;
+			j+=3;
+		}
+		coordVB.put(Coords); // add the coordinates to the FloatBuffer
+		coordVB.position(0); // set the buffer to read the first coordinate
+		GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false, 12, coordVB);
+		GLES20.glUniform3f(circle_CENTER, x, y, 0.0f);
+		GLES20.glUniform1f(circle_IRADIUS, 1.0f / r);
+		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, numvert+2);
+
+	}
+
+
 	public void onSurfaceChanged(GL10 unused, int width, int height) {
 		GLES20.glViewport(0, 0, width, height);
 //		final float fix = .00040f * ((width>height) ? width : height);
@@ -226,7 +260,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		dheight = height;
 		final float near = 1.0f;
 		final float far = 1000.0f;
- 
+
 		Matrix.frustumM(mProjectionMatrix, 0, left, right, bottom, top, near, far);
 
 		Matrix.setIdentityM(mModelMatrix, 0);
@@ -240,17 +274,17 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 			final float eyeX = 0.0f;
 			final float eyeY = 0.0f;
 			final float eyeZ = 0.0f; //1.5f;
- 
+
 			// We are looking toward the distance
 			final float lookX = 0.0f;
 			final float lookY = 0.0f;
 			final float lookZ = -5.0f;
- 
+
 			// Set our up vector. This is where our head would be pointing were we holding the camera.
 			final float upX = 0.0f;
 			final float upY = 1.0f;
 			final float upZ = 0.0f;
- 
+
 			// Set the view matrix. This matrix can be said to represent the camera position.
 			// NOTE: In OpenGL 1, a ModelView matrix is used, which is a combination of a model and
 			// view matrix. In OpenGL 2, we can keep track of these matrices separately if we choose.
@@ -268,13 +302,14 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVPMatrix, 0);
 
 	}
-  
+
+
 	private ByteBuffer vbb, vbb2;
 	private float xpos = 0.0f, ypos = 0.0f;
 	private double scale = 1.0f;
 	private int first_time = 1;
 	private void initShapes(int tv){
-	
+
 		int i;
 		float t;
 		float ap = tv * .006f;
@@ -298,21 +333,22 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 			float tt=u;
 			u = -v;
 			v = tt;
-			
+
 		}
-		
-		// initialize vertex Buffer for triangle  
+
+		// initialize vertex Buffer for triangle
 		if(first_time != 0)
 		{
+
 			first_time = 0;
-			vbb = ByteBuffer.allocateDirect(Coords.length * 4);
+			vbb = ByteBuffer.allocateDirect(MAXCOORDS * 4);
 			vbb.order(ByteOrder.nativeOrder());// use the device hardware's native byte order
 			coordVB = vbb.asFloatBuffer();  // create a floating point buffer from the ByteBuffer
-			vbb2 = ByteBuffer.allocateDirect(TCoords.length * 4);
+			vbb2 = ByteBuffer.allocateDirect(MAXCOORDS * 4);
 			vbb2.order(ByteOrder.nativeOrder());// use the device hardware's native byte order
 			textureVB = vbb2.asFloatBuffer();
-			
-		}     
+
+		}
 
 		coordVB.put(Coords); // add the coordinates to the FloatBuffer
 		coordVB.position(0); // set the buffer to read the first coordinate
@@ -376,7 +412,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 					xpos += (x - currx0) * 0.25f;// / dwidth;
 					ypos -= (y - curry0) * 0.25f;// / dheight;
 					currx0 = x;
-					curry0 = y;				
+					curry0 = y;
 				}
 			} else if(id==1)
 			{
