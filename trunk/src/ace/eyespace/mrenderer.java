@@ -171,7 +171,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 
 		lightx = -1.0f;
 		lighty = 1.0f;
-		lightz = 1.0f;
+		lightz = 0.8f;
 		float lf = 1.0f / FloatMath.sqrt(lightx*lightx + lighty*lighty + lightz*lightz);
 		lightx *= lf;
 		lighty *= lf;
@@ -187,19 +187,8 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		initShapes(time);
 		time++;
 		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
-		// Prepare the vertex data
-		GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false, 12, coordVB);
-		GLES20.glEnableVertexAttribArray(maPositionHandle);
-
 		GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
-//		GLES20.glVertexAttribPointer(matPosHandle, 3, GLES20.GL_FLOAT, false, 8, textureVB);
-//		GLES20.glEnableVertexAttribArray(matPosHandle);
-
-//Log.d(TAG, "pos " + xpos + "," + ypos);
-		GLES20.glUniform3f(circle_CENTER, xpos, ypos, 0.0f);
-
 		GLES20.glUniform3f(circle_LIGHT, lightx, lighty, lightz);
-		GLES20.glUniform1f(circle_IRADIUS, (float)(scale / 100.0f));
 
 		float eyedx, eyedy, eyedz;
 		eyedx = -xpos;
@@ -212,9 +201,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 
 		GLES20.glUniform3f(circle_DIRECTION, eyedx, eyedy, eyedz);
 
-		// Draw the figure
-		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 4);
-
+		DrawEye((float)xpos, (float)ypos, 100.0f / (float)scale, 0.0f);
 
 		for(int i=0;i<8;++i)
 		{
@@ -249,6 +236,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		}
 		coordVB.put(Coords); // add the coordinates to the FloatBuffer
 		coordVB.position(0); // set the buffer to read the first coordinate
+		GLES20.glEnableVertexAttribArray(maPositionHandle);
 		GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false, 12, coordVB);
 		GLES20.glUniform3f(circle_CENTER, x, y, 0.0f);
 		GLES20.glUniform1f(circle_IRADIUS, 1.0f / r);
