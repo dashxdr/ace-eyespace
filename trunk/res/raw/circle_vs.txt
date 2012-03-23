@@ -1,0 +1,12 @@
+//precision mediump float;
+attribute vec4 vPosition;
+attribute vec2 tPosition;
+uniform mat4 u_MVPMatrix;
+varying vec4 position;
+varying vec2 tpos;
+void main()
+{
+	gl_Position = u_MVPMatrix * vPosition;
+	tpos = tPosition;
+	position = vPosition;
+}
