@@ -245,7 +245,8 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 			int i;
 			e.x = (generator.nextFloat() - 0.5f) * sw2;
 			e.y = (generator.nextFloat() - 0.5f) * sh2;
-			e.r = Math.min(Math.abs(e.x), Math.abs(e.y));
+			e.r = FloatMath.sqrt(e.x*e.x + e.y*e.y) - 2.0f;
+			if(e.r < 0.0f) continue;
 			e.r = Math.min(e.r, sw - e.x);
 			e.r = Math.min(e.r, sw + e.x);
 			e.r = Math.min(e.r, sh - e.y);
@@ -272,7 +273,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 	{
 		for(int i=0;i<numeyes;++i)
 		{
-			final float ZOOM = 1.01f;
+			final float ZOOM = 1.02f;
 			eye e = eyes[i];
 			e.x *= ZOOM;
 			e.y *= ZOOM;
