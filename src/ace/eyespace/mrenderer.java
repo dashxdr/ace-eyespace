@@ -21,6 +21,11 @@ import android.opengl.Matrix;
 import android.util.FloatMath;
 import android.view.MotionEvent;
 
+class eye {
+	public float x, y, r, color;
+};
+
+
 public class mrenderer implements GLSurfaceView.Renderer {
 	final private int MAXCOORDS = 256;
 	private FloatBuffer coordVB, textureVB;
@@ -36,6 +41,7 @@ public class mrenderer implements GLSurfaceView.Renderer {
 	private float[] mModelMatrix = new float[16];
 	private float[] mMVPMatrix = new float[16];
 	private float sw, sh;
+	private float sw2, sh2;
 	private int dwidth, dheight;
 	private mview ourview;
 	private int[] texture = new int[1];
@@ -45,6 +51,11 @@ public class mrenderer implements GLSurfaceView.Renderer {
 	private float xpos = 0.0f, ypos = 0.0f;
 	private double scale = 1.0f;
 	private float rawx, rawy;
+	final private int NUMEYES = 300;
+	final private int BMSIZE = 256;
+	private eye[] eyes = new eye[NUMEYES];
+	private int numeyes;
+	private Random generator;
 
 	public  mrenderer(Context context, mview aview)
 	{
@@ -145,19 +156,18 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		circle_LIGHT = GLES20.glGetUniformLocation(mProgram, "LIGHT");
 		circle_COLOR = GLES20.glGetUniformLocation(mProgram, "COLOR");
 
-		final int bmsize = 256;
-		Bitmap bm = Bitmap.createBitmap(bmsize, bmsize, Bitmap.Config.ARGB_8888);
-		Random generator = new Random();
-		for(int j=0;j<bmsize;++j)
+		Bitmap bm = Bitmap.createBitmap(BMSIZE, BMSIZE, Bitmap.Config.ARGB_8888);
+		generator = new Random();
+		for(int j=0;j<BMSIZE;++j)
 		{
 			int color = generator.nextInt();
 
-			for(int i=0;i<bmsize;++i)
+			for(int i=0;i<BMSIZE;++i)
 			{
 				int outc = 0;
-				if(i>=bmsize*95/100)
+				if(i>=BMSIZE*95/100)
 					outc = 0;
-				else if(i>=bmsize*80/100)
+				else if(i>=BMSIZE*80/100)
 					outc = color;
 				else
 					outc = 0xffffff;
@@ -187,6 +197,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		lightx *= lf;
 		lighty *= lf;
 		lightz *= lf;
+
 	}
 
 	public void onDrawFrame(GL10 unused) {
@@ -200,8 +211,8 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		GLES20.glUniform3f(circle_LIGHT, lightx, lighty, lightz);
 
 		float eyedx, eyedy, eyedz;
-		eyedx = -rawx;
-		eyedy = -rawy;
+		eyedx = rawx;
+		eyedy = rawy;
 		eyedz = 100.0f;
 		float ef = 1.0f / FloatMath.sqrt(eyedx*eyedx + eyedy*eyedy + eyedz*eyedz);
 		eyedx *= ef;
@@ -210,15 +221,54 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 
 		GLES20.glUniform3f(circle_DIRECTION, eyedx, eyedy, eyedz);
 
-//		DrawEye((float)xpos, (float)ypos, 100.0f / (float)scale, 0.0f);
-		DrawEye(rawx, rawy, 100.0f / (float)scale, 0.0f);
-
-		for(int i=0;i<8;++i)
+//		DrawEye(rawx, rawy, 100.0f / (float)scale, 0.0f);
+//
+//		for(int i=0;i<8;++i)
+//		{
+//			float x = 50.0f * (i%4 - 1.5f);
+//			float y = 50.0f * (i/4 - .5f);
+//			DrawEye(x, y, 24.0f, (i+0.5f)/256.0f);
+//		}
+Log.d(TAG, "numeyes = " + numeyes);
+		for(int i=0;i<numeyes;++i)
 		{
-			float x = 50.0f * (i%4 - 1.5f);
-			float y = 50.0f * (i/4 - .5f);
-			DrawEye(x, y, 24.0f, (i+0.5f)/256.0f);
+			eye e = eyes[i];
+			DrawEye(e.x, e.y, e.r, e.color);
 		}
+
+	}
+
+	void initEye(int n)
+	{
+		eye e = new eye();
+
+		for(;;)
+		{
+			int i;
+			e.x = (generator.nextFloat() - 0.5f) * sw2;
+			e.y = (generator.nextFloat() - 0.5f) * sh2;
+			e.r = Math.min(Math.abs(e.x), Math.abs(e.y));
+			e.r = Math.min(e.r, sw - e.x);
+			e.r = Math.min(e.r, sw + e.x);
+			e.r = Math.min(e.r, sh - e.y);
+			e.r = Math.min(e.r, sh + e.y);
+			for(i=0;i<numeyes;++i)
+			{
+				if(i==n) continue;
+				eye e2 = eyes[i];
+				float dx, dy, r2;
+				dx = e2.x - e.x;
+				dy = e2.y - e.y;
+				r2 = FloatMath.sqrt(dx*dx + dy*dy);
+				if(r2 < e2.r) break; // inside this circle
+				e.r = Math.min(e.r, r2 - e2.r);
+			}
+			if(i==numeyes)
+				break;
+		}
+		e.color = ((generator.nextInt() & (BMSIZE-1)) + 0.5f) / (float)BMSIZE;
+Log.d(TAG, "eye: " + n + " x=" + e.x + " y=" + e.y + " r=" + e.r);
+		eyes[n] = e;
 	}
 
 	void DrawEye(float x, float y, float r, float c)
@@ -267,7 +317,9 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		final float top = fix * height;
 		final float bottom = -top;
 		sw = right * pushback;
+		sw2 = sw*2.0f;
 		sh = top * pushback;
+		sh2 = sh*2.0f;
 		dwidth = width;
 		dheight = height;
 		final float near = 1.0f;
@@ -313,6 +365,12 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 
 		Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVPMatrix, 0);
 
+		numeyes = 0;
+		for(numeyes=0;numeyes < NUMEYES;++numeyes)
+		{
+			initEye(numeyes);
+		}
+
 	}
 
 	private int buttonstate = 0;
@@ -339,8 +397,8 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		action &= ~MotionEvent.ACTION_POINTER_INDEX_MASK;
 //Log.d(TAG, "                           action = " + action + ", pid = " + pid);
 
-		rawx = (e.getX() / dwidth - 0.5f) * sw * 2.0f;
-		rawy = (0.5f - e.getY() / dheight) * sh * 2.0f;
+		rawx = (e.getX() / dwidth - 0.5f) * sw2;
+		rawy = (0.5f - e.getY() / dheight) * sh2;
 
 		if(action==MotionEvent.ACTION_POINTER_DOWN)
 			action = MotionEvent.ACTION_DOWN;
