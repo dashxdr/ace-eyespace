@@ -19,7 +19,7 @@ void main()
 
 	float eyedir = dot(norm, DIRECTION);
 
-	float diffuse = max(0.1, dot(norm, LIGHT));
+	float diffuse = max(0.2, dot(norm, LIGHT));
 	vec3 halfVector = normalize(LIGHT + vec3(0.0, 0.0, 1.0));
 	float nxHalf = max(0.0,dot(norm, halfVector));
 
