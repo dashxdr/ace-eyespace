@@ -229,12 +229,10 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 //			float y = 50.0f * (i/4 - .5f);
 //			DrawEye(x, y, 24.0f, (i+0.5f)/256.0f);
 //		}
-Log.d(TAG, "numeyes = " + numeyes);
+
+		advanceEyes();
 		for(int i=0;i<numeyes;++i)
-		{
-			eye e = eyes[i];
-			DrawEye(e.x, e.y, e.r, e.color);
-		}
+			DrawEye(eyes[i]);
 
 	}
 
@@ -267,11 +265,29 @@ Log.d(TAG, "numeyes = " + numeyes);
 				break;
 		}
 		e.color = ((generator.nextInt() & (BMSIZE-1)) + 0.5f) / (float)BMSIZE;
-Log.d(TAG, "eye: " + n + " x=" + e.x + " y=" + e.y + " r=" + e.r);
 		eyes[n] = e;
 	}
 
-	void DrawEye(float x, float y, float r, float c)
+	void advanceEyes()
+	{
+		for(int i=0;i<numeyes;++i)
+		{
+			final float ZOOM = 1.01f;
+			eye e = eyes[i];
+			e.x *= ZOOM;
+			e.y *= ZOOM;
+			e.r *= ZOOM;
+			if(e.x + e.r > -sw &&
+					e.x - e.r < sw &&
+					e.y + e.r > -sh &&
+					e.y - e.r < sh &&
+					e.r < 1000.0f)
+				continue;
+			initEye(i);
+		}
+	}
+
+	void DrawEye(eye e)
 	{
 		int i, j;
 		float a, re;
@@ -280,17 +296,17 @@ Log.d(TAG, "eye: " + n + " x=" + e.x + " y=" + e.y + " r=" + e.r);
 		float [] Coords = new float[3*(numvert+2)];
 
 		j = 0;
-		Coords[j+0] = x;
-		Coords[j+1] = y;
+		Coords[j+0] = e.x;
+		Coords[j+1] = e.y;
 		Coords[j+2] = 0.0f;
 		j+=3;
 
-		re = r / FloatMath.cos(3.14159f / numvert);
+		re = e.r / FloatMath.cos(3.14159f / numvert);
 		for(i=0;i<=numvert;++i)
 		{
 			a = i*3.14159f * 2.0f / numvert;
-			Coords[j+0] = x + re * FloatMath.cos(a);
-			Coords[j+1] = y + re * FloatMath.sin(a);
+			Coords[j+0] = e.x + re * FloatMath.cos(a);
+			Coords[j+1] = e.y + re * FloatMath.sin(a);
 			Coords[j+2] = 0.0f;
 			j+=3;
 		}
@@ -298,9 +314,22 @@ Log.d(TAG, "eye: " + n + " x=" + e.x + " y=" + e.y + " r=" + e.r);
 		coordVB.position(0); // set the buffer to read the first coordinate
 		GLES20.glEnableVertexAttribArray(maPositionHandle);
 		GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false, 12, coordVB);
-		GLES20.glUniform3f(circle_CENTER, x, y, 0.0f);
-		GLES20.glUniform1f(circle_IRADIUS, 1.0f / r);
-		GLES20.glUniform1f(circle_COLOR, c);
+
+
+		float eyedx, eyedy, eyedz;
+		eyedx = -e.x;
+		eyedy = -e.y;
+		eyedz = 80.0f;
+		float ef = 1.0f / FloatMath.sqrt(eyedx*eyedx + eyedy*eyedy + eyedz*eyedz);
+		eyedx *= ef;
+		eyedy *= ef;
+		eyedz *= ef;
+
+		GLES20.glUniform3f(circle_DIRECTION, eyedx, eyedy, eyedz);
+
+		GLES20.glUniform3f(circle_CENTER, e.x, e.y, 0.0f);
+		GLES20.glUniform1f(circle_IRADIUS, 1.0f / e.r);
+		GLES20.glUniform1f(circle_COLOR, e.color);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, numvert+2);
 
 	}
