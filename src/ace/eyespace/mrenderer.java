@@ -56,6 +56,7 @@ public class mrenderer implements GLSurfaceView.Renderer {
 	private eye[] eyes = new eye[NUMEYES];
 	private int numeyes;
 	private Random generator;
+	private long now;
 
 	public  mrenderer(Context context, mview aview)
 	{
@@ -230,21 +231,29 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 //			DrawEye(x, y, 24.0f, (i+0.5f)/256.0f);
 //		}
 
-		advanceEyes();
+		long last = now;
+		now = System.currentTimeMillis();
+		last = now - last;
+		if(last>1000) last = 1000;
+		while(last>0)
+		{
+			advanceEyes();
+			last -= 20;
+		}
 		for(int i=0;i<numeyes;++i)
 			DrawEye(eyes[i]);
 
 	}
 
-	void initEye(int n)
+	void initEye(int n, float range)
 	{
 		eye e = new eye();
 
 		for(;;)
 		{
 			int i;
-			e.x = (generator.nextFloat() - 0.5f) * sw2;
-			e.y = (generator.nextFloat() - 0.5f) * sh2;
+			e.x = (generator.nextFloat() - 0.5f) * sw2 * range;
+			e.y = (generator.nextFloat() - 0.5f) * sh2 * range;
 			e.r = FloatMath.sqrt(e.x*e.x + e.y*e.y) - 2.0f;
 			if(e.r < 0.0f) continue;
 			e.r = Math.min(e.r, sw - e.x);
@@ -273,7 +282,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 	{
 		for(int i=0;i<numeyes;++i)
 		{
-			final float ZOOM = 1.02f;
+			final float ZOOM = 1.01f;
 			eye e = eyes[i];
 			e.x *= ZOOM;
 			e.y *= ZOOM;
@@ -284,7 +293,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 					e.y - e.r < sh &&
 					e.r < 1000.0f)
 				continue;
-			initEye(i);
+			initEye(i, .2f);
 		}
 	}
 
@@ -398,9 +407,9 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		numeyes = 0;
 		for(numeyes=0;numeyes < NUMEYES;++numeyes)
 		{
-			initEye(numeyes);
+			initEye(numeyes, 1.0f);
 		}
-
+		now = System.currentTimeMillis();
 	}
 
 	private int buttonstate = 0;
