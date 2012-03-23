@@ -40,7 +40,7 @@ public class mrenderer implements GLSurfaceView.Renderer {
 	private mview ourview;
 	private int[] texture = new int[1];
 	private int circle_CENTER, circle_IRADIUS, circle_DIRECTION;
-	private int circle_LIGHT, circle_vposition;
+	private int circle_LIGHT, circle_COLOR;
 	private float lightx, lighty, lightz;
 
 	public  mrenderer(Context context, mview aview)
@@ -132,7 +132,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		circle_IRADIUS = GLES20.glGetUniformLocation(mProgram, "IRADIUS");
 		circle_DIRECTION = GLES20.glGetUniformLocation(mProgram, "DIRECTION");
 		circle_LIGHT = GLES20.glGetUniformLocation(mProgram, "LIGHT");
-		circle_vposition = GLES20.glGetAttribLocation(mProgram, "vPosition");
+		circle_COLOR = GLES20.glGetUniformLocation(mProgram, "COLOR");
 
 		final int bmsize = 256;
 		Bitmap bm = Bitmap.createBitmap(bmsize, bmsize, Bitmap.Config.ARGB_8888);
@@ -192,8 +192,8 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		GLES20.glEnableVertexAttribArray(maPositionHandle);
 
 		GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
-		GLES20.glVertexAttribPointer(matPosHandle, 3, GLES20.GL_FLOAT, false, 8, textureVB);
-		GLES20.glEnableVertexAttribArray(matPosHandle);
+//		GLES20.glVertexAttribPointer(matPosHandle, 3, GLES20.GL_FLOAT, false, 8, textureVB);
+//		GLES20.glEnableVertexAttribArray(matPosHandle);
 
 //Log.d(TAG, "pos " + xpos + "," + ypos);
 		GLES20.glUniform3f(circle_CENTER, xpos, ypos, 0.0f);
@@ -216,10 +216,15 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 4);
 
 
-		DrawEye(50.0f, 50.0f, 40.0f);
+		for(int i=0;i<8;++i)
+		{
+			float x = 50.0f * (i%4 - 1.5f);
+			float y = 50.0f * (i/4 - .5f);
+			DrawEye(x, y, 24.0f, (i+0.5f)/256.0f);
+		}
 	}
 
-	void DrawEye(float x, float y, float r)
+	void DrawEye(float x, float y, float r, float c)
 	{
 		int i, j;
 		float a, re;
@@ -247,6 +252,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false, 12, coordVB);
 		GLES20.glUniform3f(circle_CENTER, x, y, 0.0f);
 		GLES20.glUniform1f(circle_IRADIUS, 1.0f / r);
+		GLES20.glUniform1f(circle_COLOR, c);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, numvert+2);
 
 	}
