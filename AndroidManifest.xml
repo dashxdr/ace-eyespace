@@ -3,7 +3,7 @@
       package="ace.eyespace"
       android:versionCode="1"
       android:versionName="1.0">
-    <application android:label="@string/app_name" >
+    <application android:label="@string/app_name" android:icon="@drawable/aceeyespace_icon" >
         <activity android:name="mainActivity"
                   android:label="@string/app_name"
                   android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
