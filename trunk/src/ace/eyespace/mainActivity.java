@@ -87,7 +87,7 @@ class mview extends GLSurfaceView
 		// Set the Renderer for drawing on the GLSurfaceView
 		renderer = new mrenderer(context, this);
 		setRenderer(renderer);
-		setRenderMode(RENDERMODE_WHEN_DIRTY);
+//		setRenderMode(RENDERMODE_WHEN_DIRTY);
 
 	}
 
@@ -95,7 +95,7 @@ class mview extends GLSurfaceView
 	public boolean onTouchEvent(MotionEvent e)
 	{
 		renderer.processevent(e);
-		requestRender();
+//		requestRender();
 		return true;
 	}
 }
