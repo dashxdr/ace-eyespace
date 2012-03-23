@@ -134,15 +134,23 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 		circle_LIGHT = GLES20.glGetUniformLocation(mProgram, "LIGHT");
 		circle_vposition = GLES20.glGetAttribLocation(mProgram, "vPosition");
 
-		Bitmap bm = Bitmap.createBitmap(256, 4, Bitmap.Config.ARGB_8888);
+		final int bmsize = 256;
+		Bitmap bm = Bitmap.createBitmap(bmsize, bmsize, Bitmap.Config.ARGB_8888);
 		Random generator = new Random();
-		for(int j=0;j<4;++j)
+		for(int j=0;j<bmsize;++j)
 		{
-			for(int i=0;i<256;++i)
+			int color = generator.nextInt();
+
+			for(int i=0;i<bmsize;++i)
 			{
-				int color = (((i&1)==1) ? generator.nextInt() : 0);
-//int color = ((i&1)==1) ? 0xffffff : 0x00;
-				bm.setPixel(i, j, 0xff000000 | color);
+				int outc = 0;
+				if(i>=bmsize*95/100)
+					outc = 0;
+				else if(i>=bmsize*80/100)
+					outc = color;
+				else
+					outc = 0xffffff;
+				bm.setPixel(i, j, 0xff000000 | outc);
 			}
 		}
 		GLES20.glGenTextures(1, texture, 0);
@@ -156,9 +164,9 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 			GLES20.GL_LINEAR);
 
 		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S,
-			GLES20.GL_REPEAT);
+			GLES20.GL_CLAMP_TO_EDGE);
 		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T,
-			GLES20.GL_REPEAT);
+			GLES20.GL_CLAMP_TO_EDGE);
 		GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bm, 0);
 
 		lightx = -1.0f;
@@ -172,7 +180,7 @@ Log.d(TAG, "GL_SHADING_LANGUAGE_VERSION = " + GLES20.glGetString(GLES20.GL_SHADI
 
 	public void onDrawFrame(GL10 unused) {
 		// Redraw background color
-		GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+		GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);// | GLES20.GL_DEPTH_BUFFER_BIT);
 		// Add program to OpenGL environment
 		GLES20.glUseProgram(mProgram);
 

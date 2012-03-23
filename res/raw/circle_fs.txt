@@ -7,9 +7,10 @@ varying vec4 position;
 uniform vec3 LIGHT;
 varying vec2 tpos;
 varying vec4 gl_FragCoord;
+uniform sampler2D cmap;
 void main()
 {
-	vec3 color;
+	vec4 color;
 
 	vec2 rad = (position.xy - CENTER.xy) * IRADIUS;
 	float r2 = dot(rad, rad);//rad.x*rad.x + rad.y*rad.y;
@@ -24,23 +25,25 @@ void main()
 	float nxHalf = max(0.0,dot(norm, halfVector));
 
 	float specularPower;
-	vec3 specular;
+	vec4 specular;
 //	specularPower = pow(nxHalf, 20.0);
 //	specular = vec3(0.7, 0.7, 0.7) * specularPower;
 
 	specularPower = (nxHalf > .96) ? 0.7 : 0.0;
-	specular = vec3(1.0, 1.0, 1.0) * specularPower;
+	specular = vec4(1.0, 1.0, 1.0, 1.0) * specularPower;
 
 //	gl_FragColor = texture2D(cmap, vec2((float(iter)+.5)/256.0, 0.125));
 
-	if(eyedir > .9)
-		color = vec3(0.0, 0.0, 0.0);
-	else
-		color = (eyedir > .7) ? vec3(1.0, 0.0, 0.0) : vec3(1.0, 1.0, 1.0);
+//	if(eyedir > .9)
+//		color = vec3(0.0, 0.0, 0.0);
+//	else
+//		color = (eyedir > .7) ? vec3(1.0, 0.0, 0.0) : vec3(1.0, 1.0, 1.0);
+
+	color = texture2D(cmap, vec2(eyedir, 0.000));
 
 	color = color * diffuse + specular;
 
-	gl_FragColor = vec4(color, 1.0);
+	gl_FragColor = vec4(color.rgb, 1.0);
 
 
 
